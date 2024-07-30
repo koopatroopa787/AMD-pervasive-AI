@@ -1,0 +1,11 @@
+streamlit
+pytube
+vosk
+transformers
+huggingface_hub
+torch
+RealESRGAN
+tqdm
+Pillow
+opencv-python
+torchaudio
