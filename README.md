@@ -47,7 +47,11 @@ Python 3.8 or higher
 pip
 ```
 # Installation
-
+## Clone the repository:
+```plaintext
+https://github.com/koopatroopa787/AMD-pervasive-AI.git
+cd AMD-pervasive-AI
+```
 
 ```plaintext
 pip install -r requirements.txt
