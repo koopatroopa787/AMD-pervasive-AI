@@ -9,19 +9,19 @@
     <td align="center">
       <a href="https://github.com/koopatroopa787">
         <img src="https://github.com/koopatroopa787.png" width="100px;" alt="Profile Picture"/><br />
-        <sub><b>Name1</b></sub>
+        <sub><b>Kanishk Kumar Sachan</b></sub>
       </a>
     </td>
     <td align="center">
       <a href="https://github.com/Divine-pro">
         <img src="https://github.com/Divine-pro.png" width="100px;" alt="Profile Picture"/><br />
-        <sub><b>Name2</b></sub>
+        <sub><b>Iltimas Kabir</b></sub>
       </a>
     </td>
     <td align="center">
       <a href="https://github.com/darryll-git">
         <img src="https://github.com/darryll-git.png" width="100px;" alt="Profile Picture"/><br />
-        <sub><b>Name3</b></sub>
+        <sub><b>Darryll Fonseca</b></sub>
       </a>
     </td>
   </tr>
