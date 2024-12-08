@@ -1,8 +1,6 @@
 # Streamline: AI-Powered Multi-Language Video Summarizer and Upscaler
 
-# Developed by: Kanishk Kumar Sachan (koopatroopa787)
-
-## Contributors
+# Contributors
 
 <table>
   <tr>
