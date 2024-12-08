@@ -1,6 +1,32 @@
 # Streamline: AI-Powered Multi-Language Video Summarizer and Upscaler
 
-# Developed by: Kanishk Kumar Sachan (koopatroopa787), Iltimas Kabir (Divine-pro) and Darryll Fonseca (darryll-git)
+# Developed by: Kanishk Kumar Sachan (koopatroopa787)
+
+## Contributors
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/koopatroopa787">
+        <img src="https://github.com/koopatroopa787.png" width="100px;" alt="Profile Picture"/><br />
+        <sub><b>Name1</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/Divine-pro">
+        <img src="https://github.com/Divine-pro.png" width="100px;" alt="Profile Picture"/><br />
+        <sub><b>Name2</b></sub>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/darryll-git">
+        <img src="https://github.com/darryll-git.png" width="100px;" alt="Profile Picture"/><br />
+        <sub><b>Name3</b></sub>
+      </a>
+    </td>
+  </tr>
+</table>
+
 
 ## Project Description
 Streamline is an advanced AI-powered tool that enhances and simplifies video content consumption. It provides automated video summarization, multi-language translation, and upscaling, making content accessible and high-quality for a global audience.
