@@ -1,7 +1,9 @@
 # Streamline: AI-Powered Multi-Language Video Summarizer and Upscaler
 
+# Developed by: Kanishk Kumar Sachan (koopatroopa787), Iltimas Kabir (Divine-pro) and Darryll Fonseca (darryll-git)
+
 ## Project Description
-Streamline is an advanced AI-powered tool designed to enhance and simplify video content consumption. It provides automated video summarization, multi-language translation, and upscaling, making content accessible and high-quality for a global audience.
+Streamline is an advanced AI-powered tool that enhances and simplifies video content consumption. It provides automated video summarization, multi-language translation, and upscaling, making content accessible and high-quality for a global audience.
 
 ## Directory Structure
 ```plaintext
