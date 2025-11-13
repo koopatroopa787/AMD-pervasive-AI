@@ -412,16 +412,19 @@ def process_transcript_summarizer():
 
 
 def process_video_upscaler():
-    """Handle video upscaling workflow"""
-    st.header("🎬 AI Video Upscaler")
-    st.markdown("Enhance video quality using AI upscaling (Real-ESRGAN).")
+    """Handle video upscaling workflow with enhanced quality controls"""
+    st.header("🎬 AI Video Upscaler Enhanced")
+    st.markdown("Enhance video quality using AI upscaling (Real-ESRGAN) with advanced encoding options.")
 
     # Input method selection
-    input_method = st.radio(
-        "Select input method",
-        ("🔗 YouTube URL", "📁 Upload Video File"),
-        horizontal=True
-    )
+    col1, col2 = st.columns(2)
+
+    with col1:
+        input_method = st.radio(
+            "Select input method",
+            ("🔗 YouTube URL", "📁 Upload Video File"),
+            horizontal=True
+        )
 
     video_path = None
 
@@ -433,7 +436,9 @@ def process_video_upscaler():
             help="Paste a valid YouTube video URL"
         )
 
-        if st.button("🚀 Download and Upscale", type="primary", use_container_width=True):
+        process_button = st.button("🚀 Download and Process", type="primary", use_container_width=True)
+
+        if process_button:
             if not url or not is_valid_youtube_url(url):
                 st.error("Please enter a valid YouTube URL")
                 return
@@ -475,60 +480,278 @@ def process_video_upscaler():
     if video_path:
         st.markdown("---")
 
-        try:
-            with st.spinner("🔄 Loading upscaling model..."):
-                from huggingface_hub import hf_hub_download
-                from RealESRGAN import RealESRGAN
-                import torch
+        # Get input video info
+        from utils.upscaling import get_video_info, VideoCodec, QualityPreset, VideoEncodingSettings, encode_video
 
-                model_path = hf_hub_download(
-                    repo_id=config.upscaling.model_id,
-                    filename=config.upscaling.model_filename
-                )
+        input_info = get_video_info(video_path)
 
-                device = torch.device('cuda' if torch.cuda.is_available() and config.use_gpu else 'cpu')
-                model = RealESRGAN(device, scale=config.upscaling.scale)
-                model.load_weights(model_path, download=True)
+        # Display input video info
+        if input_info:
+            st.subheader("📹 Input Video Information")
+            col1, col2, col3, col4 = st.columns(4)
 
-                logger.info(f"Model loaded on {device}")
+            with col1:
+                st.metric("Resolution", f"{input_info.get('width', 0)}x{input_info.get('height', 0)}")
+            with col2:
+                st.metric("Duration", f"{input_info.get('duration', 0):.1f}s")
+            with col3:
+                bitrate_mbps = input_info.get('bitrate', 0) / 1_000_000
+                st.metric("Bitrate", f"{bitrate_mbps:.1f} Mbps")
+            with col4:
+                size_mb = input_info.get('size_bytes', 0) / (1024 * 1024)
+                st.metric("File Size", f"{size_mb:.1f} MB")
 
-            # Upscale video
-            output_video_path = config.paths.temp_directory / 'upscaled_video.mp4'
-            converted_video_path = config.paths.temp_directory / 'upscaled_video_h264.mp4'
+        st.markdown("---")
+        st.subheader("⚙️ Upscaling & Encoding Settings")
 
-            with st.spinner(f"⬆️ Upscaling video ({config.upscaling.scale}x)..."):
+        # Settings in expandable sections
+        col1, col2 = st.columns(2)
+
+        with col1:
+            st.markdown("**🔍 Upscaling Options**")
+
+            # Upscale factor
+            upscale_factor = st.selectbox(
+                "Upscale Factor",
+                options=[2, 4, 8],
+                index=1,  # Default to 4x
+                help="Higher values produce larger output but take longer"
+            )
+
+            # Duration limit
+            duration_limit = st.number_input(
+                "Max Duration (seconds)",
+                min_value=5,
+                max_value=300,
+                value=config.upscaling.max_duration or 15,
+                step=5,
+                help="Limit processing time for large videos (0 = process full video)"
+            )
+            if duration_limit == 0:
+                duration_limit = None
+
+            # Workers
+            max_workers = st.slider(
+                "Parallel Workers",
+                min_value=1,
+                max_value=16,
+                value=config.upscaling.max_workers,
+                help="More workers = faster processing (requires more RAM/GPU memory)"
+            )
+
+        with col2:
+            st.markdown("**🎞️ Encoding Options**")
+
+            # Quality preset
+            quality_preset = st.selectbox(
+                "Quality Preset",
+                options=["Ultra", "High", "Medium", "Low", "Custom"],
+                index=1,  # Default to High
+                help="Predefined quality settings"
+            )
+
+            preset_map = {
+                "Ultra": QualityPreset.ULTRA,
+                "High": QualityPreset.HIGH,
+                "Medium": QualityPreset.MEDIUM,
+                "Low": QualityPreset.LOW,
+                "Custom": QualityPreset.CUSTOM
+            }
+
+            # Codec selection
+            codec_option = st.selectbox(
+                "Video Codec",
+                options=["H.264 (Best Compatibility)", "H.265 (Better Compression)"],
+                index=0,
+                help="H.265 produces smaller files but may have compatibility issues"
+            )
+
+            selected_codec = VideoCodec.H264 if "H.264" in codec_option else VideoCodec.H265
+
+            # Custom settings if selected
+            if quality_preset == "Custom":
+                with st.expander("🔧 Custom Encoding Settings", expanded=True):
+                    col_a, col_b = st.columns(2)
+
+                    with col_a:
+                        crf = st.slider(
+                            "CRF (Quality)",
+                            min_value=0,
+                            max_value=51,
+                            value=20,
+                            help="Lower = better quality, larger file (18-28 recommended)"
+                        )
+
+                        video_bitrate = st.text_input(
+                            "Video Bitrate (optional)",
+                            value="",
+                            placeholder="e.g., 10M, 5000k",
+                            help="Leave empty to use CRF mode"
+                        )
+
+                    with col_b:
+                        encoding_preset = st.selectbox(
+                            "Encoding Speed",
+                            options=["ultrafast", "superfast", "veryfast", "faster", "fast", "medium", "slow", "slower", "veryslow"],
+                            index=5,  # medium
+                            help="Slower = better compression efficiency"
+                        )
+
+                        audio_bitrate = st.select_slider(
+                            "Audio Bitrate",
+                            options=["96k", "128k", "192k", "256k", "320k"],
+                            value="256k",
+                            help="Higher = better audio quality"
+                        )
+
+        st.markdown("---")
+
+        # Start processing button
+        if st.button("🚀 Start Upscaling", type="primary", use_container_width=True):
+            try:
+                # Load upscaling model
+                with st.spinner("🔄 Loading AI upscaling model..."):
+                    from huggingface_hub import hf_hub_download
+                    from RealESRGAN import RealESRGAN
+                    import torch
+
+                    model_id = config.upscaling.model_id
+                    # Adjust model filename based on scale
+                    if upscale_factor == 2:
+                        model_filename = "RealESRGAN_x2.pth"
+                    elif upscale_factor == 8:
+                        model_filename = "RealESRGAN_x8.pth"
+                    else:
+                        model_filename = "RealESRGAN_x4.pth"
+
+                    try:
+                        model_path = hf_hub_download(repo_id=model_id, filename=model_filename)
+                    except:
+                        # Fallback to default
+                        model_filename = config.upscaling.model_filename
+                        model_path = hf_hub_download(repo_id=model_id, filename=model_filename)
+
+                    device = torch.device('cuda' if torch.cuda.is_available() and config.use_gpu else 'cpu')
+                    model = RealESRGAN(device, scale=upscale_factor)
+                    model.load_weights(model_path, download=True)
+
+                    st.success(f"✅ Model loaded on {device.type.upper()}")
+                    logger.info(f"Model loaded: {model_filename} on {device}")
+
+                # Upscale video
+                output_video_path = config.paths.temp_directory / 'upscaled_video_raw.mp4'
+                final_video_path = config.paths.temp_directory / f'upscaled_{Path(video_path).stem}_final.mp4'
+
+                progress_container = st.empty()
+                with progress_container:
+                    st.info(f"⬆️ Upscaling video {upscale_factor}x (this may take several minutes)...")
+
                 upscale_video(
                     video_path,
                     output_video_path,
                     model,
-                    max_duration=config.upscaling.max_duration,
-                    max_workers=config.upscaling.max_workers
+                    max_duration=duration_limit,
+                    max_workers=max_workers
                 )
 
-            with st.spinner("🎞️ Converting to H.264..."):
-                convert_to_h264(output_video_path, converted_video_path)
+                st.success("✅ Upscaling complete!")
 
-            st.success("✅ Video upscaled successfully!")
+                # Encode with selected settings
+                progress_container.empty()
+                with st.spinner("🎞️ Encoding video with enhanced settings..."):
+                    if quality_preset == "Custom":
+                        # Build custom settings
+                        settings = VideoEncodingSettings(
+                            codec=selected_codec,
+                            crf=crf,
+                            preset=encoding_preset,
+                            video_bitrate=video_bitrate if video_bitrate else None,
+                            audio_bitrate=audio_bitrate
+                        )
+                        encoding_stats = encode_video(output_video_path, final_video_path, settings=settings)
+                    else:
+                        # Use preset
+                        selected_preset = preset_map[quality_preset]
+                        encoding_stats = encode_video(
+                            output_video_path,
+                            final_video_path,
+                            quality_preset=selected_preset
+                        )
 
-            # Display result
-            st.subheader("📺 Upscaled Video")
-            st.video(str(converted_video_path))
+                st.success("✅ Encoding complete!")
 
-            # Download button
-            with open(converted_video_path, "rb") as f:
-                st.download_button(
-                    "⬇️ Download Upscaled Video",
-                    f,
-                    file_name=f"upscaled_{Path(video_path).stem}.mp4",
-                    mime="video/mp4",
-                    use_container_width=True
-                )
+                # Display statistics
+                st.markdown("---")
+                st.subheader("📊 Processing Statistics")
 
-            st.balloons()
+                col1, col2, col3, col4 = st.columns(4)
 
-        except Exception as e:
-            logger.error(f"Upscaling failed: {e}", exc_info=True)
-            st.error(f"❌ Upscaling failed: {e}")
+                with col1:
+                    st.metric(
+                        "Encoding Time",
+                        f"{encoding_stats.get('encoding_time', 0):.1f}s"
+                    )
+
+                with col2:
+                    input_size = encoding_stats.get('input_size_mb', 0)
+                    output_size = encoding_stats.get('output_size_mb', 0)
+                    st.metric(
+                        "File Size",
+                        f"{output_size:.1f} MB",
+                        f"{output_size - input_size:+.1f} MB"
+                    )
+
+                with col3:
+                    compression = encoding_stats.get('compression_ratio', 1.0)
+                    st.metric(
+                        "Compression Ratio",
+                        f"{compression:.1%}",
+                        f"{(1 - compression) * 100:.1f}% reduction" if compression < 1 else "Larger file"
+                    )
+
+                with col4:
+                    output_bitrate_mbps = encoding_stats.get('output_bitrate', 0) / 1_000_000
+                    st.metric(
+                        "Output Bitrate",
+                        f"{output_bitrate_mbps:.1f} Mbps"
+                    )
+
+                # Display result
+                st.markdown("---")
+                st.subheader("📺 Result")
+
+                tab1, tab2 = st.tabs(["🎬 Upscaled Video", "📋 Details"])
+
+                with tab1:
+                    st.video(str(final_video_path))
+
+                with tab2:
+                    st.json({
+                        "upscale_factor": f"{upscale_factor}x",
+                        "codec": selected_codec.name,
+                        "quality_preset": quality_preset,
+                        "resolution": encoding_stats.get('resolution', 'unknown'),
+                        "encoding_time": f"{encoding_stats.get('encoding_time', 0):.1f}s",
+                        "output_size_mb": f"{encoding_stats.get('output_size_mb', 0):.2f}",
+                        "output_bitrate_mbps": f"{output_bitrate_mbps:.2f}"
+                    })
+
+                # Download button
+                with open(final_video_path, "rb") as f:
+                    st.download_button(
+                        "⬇️ Download Upscaled Video",
+                        f,
+                        file_name=f"upscaled_{upscale_factor}x_{Path(video_path).stem}.mp4",
+                        mime="video/mp4",
+                        use_container_width=True
+                    )
+
+                st.balloons()
+
+            except Exception as e:
+                logger.error(f"Upscaling failed: {e}", exc_info=True)
+                st.error(f"❌ Processing failed: {e}")
+                st.info("💡 Try reducing the video duration limit or lowering the upscale factor.")
 
 
 # Main application logic
