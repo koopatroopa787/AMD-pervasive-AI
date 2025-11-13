@@ -1,11 +1,37 @@
-streamlit
-pytube
-vosk
-transformers
-huggingface_hub
-torch
-RealESRGAN
-tqdm
-Pillow
-opencv-python
-torchaudio
+# Web Framework
+streamlit>=1.28.0
+
+# Video Processing
+pytube>=15.0.0
+opencv-python>=4.8.0
+Pillow>=10.0.0
+
+# Audio Processing
+torchaudio>=2.0.0
+soundfile>=0.12.1
+
+# Speech Recognition
+vosk>=0.3.45
+
+# AI/ML Models
+transformers>=4.35.0
+torch>=2.0.0
+huggingface_hub>=0.19.0
+accelerate>=0.24.0
+bitsandbytes>=0.41.0
+
+# Video Upscaling
+RealESRGAN>=0.3.0
+
+# LLM Providers (optional, install based on your needs)
+openai>=1.3.0
+anthropic>=0.7.0
+groq>=0.4.0
+
+# Utilities
+tqdm>=4.66.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+
+# Type hints and validation
+typing-extensions>=4.8.0
