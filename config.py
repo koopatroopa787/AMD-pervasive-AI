@@ -211,7 +211,7 @@ class AppConfig:
             "openai": self.llm.openai_model,
             "anthropic": self.llm.anthropic_model,
             "ollama": self.llm.ollama_model,
-            "groq": self.groq_model,
+            "groq": self.llm.groq_model,
         }
         return provider_models.get(self.llm.provider, "unknown")
 
